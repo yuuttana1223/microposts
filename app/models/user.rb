@@ -7,5 +7,29 @@ class User < ApplicationRecord
   # パスワード付きのモデル
   has_secure_password
 
-  has_many :microposts
+  has_many :microposts, dependent: :destroy
+
+  has_many :relationships
+  # followingsというものを命名する。followカラムから取ってくる。user.followingsで取れる
+  has_many :followings, through: :relationships, source: :follow
+
+  # 『多対多の図』の左半分にいるUserからフォローされている」という関係への参照。reveseは自分で命名したもの
+  # ----------------------------------------------------------------------------------------------------
+  has_many :reverses_of_relationship, class_name: 'Relationship', foreign_key: 'follow_id'
+  has_many :followers, through: :reverses_of_relationship, source: :user
+
+  def follow(other_user)
+    unless self == other_user
+      self.relationships.find_or_create_by(follow_id: other_user.id)
+    end
+  end
+
+  def unfollow(other_user)
+    relationship = self.relationships.find_by(follow_id: other_user.id)
+    relationship.destroy if relationship
+  end
+
+  def following?(other_user)
+    self.followings.include?(other_user)
+  end
 end
