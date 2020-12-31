@@ -32,4 +32,10 @@ class User < ApplicationRecord
   def following?(other_user)
     self.followings.include?(other_user)
   end
+
+  def feed_microposts
+    # following_ids は User モデルの has_many :followings, ... によって自動的に生成されるメソッド
+    # Micropost.where("user_id IN (?) OR user_id = ?", following_ids, id)と同じ意味
+    Micropost.where(user_id: self.following_ids + [self.id])
+  end
 end
